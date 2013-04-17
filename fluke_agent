@@ -1,0 +1,266 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
+require "newrelic_plugin"
+require "net/http"
+require 'json'
+
+module FlukeAgent
+
+  #
+  # Each agent must have an agent class that inherits from NewRelic::Plugin::Agent::Base. There will
+  # be one instance of this class for each device/object/service being monitored. So, for example, if you
+  # are monitoring 24 different statistics on two different database instances, there will be two
+  # instances of this class, one for each database instance.
+  #
+  #
+  class Agent < NewRelic::Plugin::Agent::Base
+    #
+    #
+    # Get a GUID by creating a plugin with your account at New Relic. To do so, go to
+    # the 'Plugins' tab, then create a new plugin. When you view the details of that plugin
+    # you will see a GUID. Place that GUID here.
+    #
+    #
+    agent_guid "YOUR_GUID_HERE"
+
+    #
+    #
+    # Specify a version identifier for this plugin. Please use this format:
+    #
+    #   A.B.C
+    # # Where A, B, and C are all integers. Increase A for major releases, B for minor releases,
+    # and C for bug fix only changes. Each version should be a higher number than the previous version.
+    # For example, 1.0.1 is newer than 1.0.0. And 2.0.1 is newer than 1.9.5.
+    #
+    #
+    agent_version "0.0.1"
+
+    #
+    #
+    # Specify a human-readable label for this agent, and for instances of this agent.
+    # The single parameter is the static name assigned to this agent, and the return
+    # value of the block execution should return a label for a specific instance
+    # of the agent that corresponds to a specific device/object/service being monitored
+    # (please note that the block is executed in the context of the agent instance).
+    #
+    #
+    agent_human_labels("FlukeVPM") { "#{agent_name}" }
+
+    #
+    #
+    # Specify your configuration variables that instances of your agent require. They are
+    # set for this instance during the configuration and initialization of the instance.
+    # An example configuration variable is "endpoint", which specifies the network location
+    # for this instance (such as the hostname of the database). These values become instance
+    # variables within a specific Agent instance (for example, @endpoint, @xxx, @yyy). These
+    # values are set in the configuration file, as described later.
+    #
+    #
+
+    agent_config_options :agent_name,:hostname,:user,:password,:domain
+    #
+    # Note: If no configuration is required, and only a single instance of the agent
+    # is ever anticipated, then remove the agent_config_options line and add this one instead:
+    #
+    #no_config_required
+    #
+    # Once this option is enabled, no entry for this agent is needed on the configuration file.
+
+    #
+    #
+    # setup_metrics:
+    # This method is used to associate a processor with a piece of data. A processor is
+    # a piece of standard functionality provided by the NewRelic core agent that provides
+    # common data manipulation to convert raw data read from a device into a format suitable
+    # for sending to New Relic. PROCESSORS ARE OPTIONAL. YOU DO NOT NEED TO USE PROCESSORS
+    # IN YOUR AGENTS.
+    #
+    # There are currently two processors:
+    #
+    #   EpochCounter - Is used when data read from a device is of the form of a constantly
+    #                  incrementing number since some "epoch", such as device restart. An
+    #                  example epoch counter would be, for instance, in MySQL, the "bytes_received"
+    #                  metrics reports the number of bytes sent to MySQL since it was last restarted.
+    #                  The EpochCounter processor converts polled data of this format into "Bytes/Seconds",
+    #                  which is much easier to graph and use within New Relic. The EpochCounter processor
+    #                  assumes the data is constantly increasing, and properly handles the case when the
+    #                  epoch is reset (such as when a device reboots).
+    #    Rate        - Is used when you want to take the first derivitive of a data value. This can
+    #                  be used when the rate of change of a polled value is more important than the value
+    #                  itself. We use this in the Wikipedia sample agent to convert the "total number of articles"
+    #                  into a "number of articles added per second" figure.
+    #                  While EpochCounter and Rate perform similar functions, note that (unlike EpochCounter)
+    #                  Rate allows values that increase or decrease, but it does not handle resets of data on device restart.
+    #
+    # No processor is required if a polled value is already in the proper format and can be consumed
+    # directly by New Relic. An example is in MySQL, the "Open_files" stat returns the current number of
+    # open files, and is useful for display within New Relic as is.
+    #
+    # Note that you must have a *seperate* instance of an appropriate processor for each collected
+    # metric. In the below example, we create a seperate instance variable for each processor, but you
+    # could, of course, store them all in a single hash, for example. Note that they must be stored in
+    # some form of instance variable so they can be used within the poll_cycle method.
+    #
+    #
+    def setup_metrics
+    end
+
+    # Abstraction for getting Application metrics
+    def getTruViewAppMetrics(appname)
+        return getTruViewMetrics("ApmApplicationTrend", "applicationname%20in('#{appname}')")
+    end
+
+    # Abstraction for getting Site metrics
+    def getTruViewSiteMetrics(sitename)
+        return getTruViewMetrics("ApmSiteTrend", "sitename%20in('#{sitename}')")
+    end
+
+    #
+    #
+    # getTruViewMetrics:
+    # This method is used to request TruView metrics.
+    #
+    #
+    def getTruViewMetrics(target, filter)
+      base_url =
+      "http://#{hostname}/portal/portal/services/connexdataaccess.ashx"\
+      "?Domain=#{domain}"\
+      "&UserName=#{user}"\
+      "&Password=#{password}"\
+      "&timeRange=Last10Minutes"\
+      "&query=#{target}&format=json"
+
+      url = "#{base_url}&filter=#{filter}"
+      resp = ::Net::HTTP.get_response(URI.parse(url))
+      data = resp.body
+
+      # we convert the returned JSON data to native Ruby
+      # data structure - a hash
+      results = JSON.parse(data)
+
+      # if the hash has 'Error' as a key, we raise an error
+      if results.has_key? 'Error'
+        raise "web service error"
+      end
+
+      # Use latest result
+      return results['Table'][-1] # Just a note, but "results['Table'][-1]" is specific to the VPM data Connex returns
+
+    end
+
+    #
+    #
+    # This method is run every poll cycle (by default, once every 60 seconds). Here is where you should
+    # report your metrics. The following tasks must be done:
+    #
+    # 1. Gather metrics from the device being monitored (this may be a single call to the device, or multiple calls).
+    # 2. For each metric that requires handling by a processor (EpochCounter or Rate), pass the data to the "process"
+    #    method of the corresponding processor instance. The return value is the newly processed value to be used in reporting.
+    #    Not all metric require processing.
+    # 3. Pass the data (raw or processed, as appropriate) to New Relic (using the report_metric call).
+    #
+    #
+    # Processor usage:
+    #   processed_value = @my_processor_instance.process raw_value
+    #
+    # This method takes the raw_value and processes it, returning the processed value according to the
+    # rules sepcified by the specific processor. If it returns NULL, that means no data value can be reported
+    # in this time period. Note that the @my_processor_instance method maintains state between calls to "process",
+    # so that it may use historical data values along with the current raw_value to determine the new processed_value.
+    #
+    # report_metric usage:
+    #   report_metric <metric_name>,<units>,<value>
+    #
+    # The <metric_name> is the name of the metric to be used within New Relic. The <units> is a properly
+    # coded string showing the units that should be used for this metric (see below). The <value> is the
+    # data value to be sent to New Relic for this poll cycle. This may be straight from the monitored
+    # entity, or processed thru a processor (such as the EpochCounter).
+    # 
+    #
+    def poll_cycle
+
+      for app in ['VNS-ERP%20Web', 'MYSQL', 'Oracle']
+        global_stats=getTruViewAppMetrics(app)
+
+        # No need for HTTP format in report
+        app = app.gsub("%20", "_")
+
+        # Group EURTs in a wildcard (*) friendly format
+        report_metric "Apps/Eurt/#{app}",                   "ms",   global_stats["Eurt"]
+
+        # Group Transactions in a wildcard (*) friendly format
+        report_metric "Apps/Transactions/#{app}",            "",     global_stats["Transactions"]
+
+        # Group Response Times in a wildcard (*) friendly format, by each app
+        report_metric "Apps/ResponseTime/#{app}/ART",       "ms",   global_stats["Art"]
+        report_metric "Apps/ResponseTime/#{app}/DTT",       "ms",   global_stats["Dtt"]
+        report_metric "Apps/ResponseTime/#{app}/NRT",       "ms",   global_stats["ServerNrt"]
+
+        # Group Bytes in a wildcard (*) friendly format, by each app
+        report_metric "Apps/Bytes/#{app}/Client",           "B",    global_stats["ClientBytes"]
+        report_metric "Apps/Bytes/#{app}/Server",           "B",    global_stats["ServerBytes"]
+      end
+
+      for site in ['Dallas', 'London', 'Tokyo']
+        global_stats=getTruViewSiteMetrics(site)
+
+        # Group EURTs in a wildcard (*) friendly format
+        report_metric "Sites/Eurt/#{site}",                 "ms",   global_stats["Eurt"]
+
+        # Group Usage in a wildcard (*) friendly format
+        report_metric "Sites/Usage/#{site}",                "",     global_stats["TotalBytes"]
+
+        # Group Response Times in a wildcard (*) friendly format, by each site
+        report_metric "Sites/ResponseTime/#{site}/ART",     "ms",   global_stats["Art"]
+        report_metric "Sites/ResponseTime/#{site}/DTT",     "ms",   global_stats["Dtt"]
+        report_metric "Sites/ResponseTime/#{site}/NRT",     "ms",   global_stats["ServerNrt"]
+
+        # Group Bytes in a wildcard (*) friendly format, by each site
+        report_metric "Sites/Bytes/#{site}/Client",         "ms",   global_stats["ClientBytes"]
+        report_metric "Sites/Bytes/#{site}/Server",         "ms",   global_stats["ServerBytes"]
+      end
+    end
+  end
+
+  #
+  #
+  # Register this agent with the plugin system. The :samples value must be unique, and is used
+  # in several different locations to identify this agent. For example, it is used within the
+  # configuration file (see below).
+  #
+  #
+  NewRelic::Plugin::Setup.install_agent :TruViewAgent, FlukeAgent
+
+  #
+  #
+  # Launch the agent (this never returns)
+  #
+  #
+  NewRelic::Plugin::Run.setup_and_run
+
+end
+
+
+#
+#
+# Note: You must have a config/newrelic_plugin.yml file that
+#       contains the following information in order to use
+#       this Gem:
+#
+#       newrelic:
+#         # Update with your New Relic account license key:
+#         license_key: 'put_your_license_key_here'
+#         # Set to '1' for verbose output, remove for normal output. All output goes to stdout/stderr.
+#         verbose: 1
+#       agents:
+#         sample: # Must match identifier given to the agent ("sample" in this case, same name used in the "NewRelic::Plugin::Setup.install_agent" call)
+#           - # An entry for each instance of a component you wish to monitor
+#             # Configuration variables that match the "agent_config_options" in the Agent class
+#             endpoint: yyy
+#             xxx: yyy
+#             xxx: yyy
+#
+#
+
+
