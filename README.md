@@ -1,4 +1,4 @@
-TruView Extension for New Relic
+Fluke Networks TruView Extension for New Relic
 =================
 
 ### Instructions for running the TruView Agent
