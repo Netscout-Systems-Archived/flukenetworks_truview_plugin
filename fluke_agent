@@ -22,7 +22,7 @@ module FlukeAgent
     # you will see a GUID. Place that GUID here.
     #
     #
-    agent_guid "989b9b444b9a8a47be5063af8c983701a8d254be"
+    agent_guid "com.flukenetworks.truview.newrelic-extension"
 
     #
     #
