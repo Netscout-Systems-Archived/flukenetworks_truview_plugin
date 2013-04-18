@@ -34,7 +34,7 @@ module FlukeAgent
     # For example, 1.0.1 is newer than 1.0.0. And 2.0.1 is newer than 1.9.5.
     #
     #
-    agent_version "0.0.1"
+    agent_version "1.0.0"
 
     #
     #
