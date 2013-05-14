@@ -34,7 +34,7 @@ module FlukeAgent
     # For example, 1.0.1 is newer than 1.0.0. And 2.0.1 is newer than 1.9.5.
     #
     #
-    agent_version "1.0.0"
+    agent_version "1.0.1"
 
     #
     #
@@ -190,12 +190,12 @@ module FlukeAgent
         report_metric "Apps/Eurt/#{app}",                   "ms",   global_stats["Eurt"]
 
         # Group Transactions in a wildcard (*) friendly format
-        report_metric "Apps/Transactions/#{app}",            "",     global_stats["Transactions"]
+        report_metric "Apps/Transactions/#{app}",            "",    global_stats["Transactions"]
 
         # Group Response Times in a wildcard (*) friendly format, by each app
         report_metric "Apps/ResponseTime/#{app}/ART",       "ms",   global_stats["Art"]
-        report_metric "Apps/ResponseTime/#{app}/DTT",       "ms",   global_stats["Dtt"]
         report_metric "Apps/ResponseTime/#{app}/NRT",       "ms",   global_stats["ServerNrt"]
+        report_metric "Apps/ResponseTime/#{app}/DTT",       "ms",   global_stats["Dtt"]
 
         # Group Bytes in a wildcard (*) friendly format, by each app
         report_metric "Apps/Bytes/#{app}/Client",           "B",    global_stats["ClientBytes"]
