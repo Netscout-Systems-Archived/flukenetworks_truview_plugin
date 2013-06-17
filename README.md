@@ -1,10 +1,14 @@
-Fluke Networks TruView Extension for New Relic
+Visual TruView Extension for New Relic
 =================
 
-### Instructions for running the TruView Agent
+### About
+For enterprises who have hybrid cloud applications, the TruView plugin in New Relic provides application and network infrastructure performance data from inside the enterprise data-center.
 
-By default, the agent is set up to use a demo user with a sample data set. This is to help get you off the ground more quickly! Try playing around
-with which metrics are reported to New Relic in the `fluke_agent` file.
+By deploying the plugin alongside your TruView, you can leverage the simplicity and availability of New Relic to make your network performance more accessible.
+
+### Instructions for running the TruView Example Agent
+
+By default, the agent is set up to use a demo user with a sample data set. This is to help get you off the ground more quickly! Try playing around with which metrics are reported to New Relic in the `fluke_agent` file.
 
 1. Go to <a href="https://github.com/newrelic-platform/flukenetworks_truview_extension" target="_blank">TruView plugin page</a> and find the latest archive.
 1. Download and extract the source
