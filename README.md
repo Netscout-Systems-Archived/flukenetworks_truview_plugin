@@ -14,7 +14,7 @@ By default, the agent is set up to use a demo user with a sample data set. This 
 1. Download and extract the source
 1. Run `bundle install`
 1. Copy `config/template_newrelic_plugin.yml` to `config/newrelic_plugin.yml`
-1. Edit `config/newrelic_plugin.yml` and replace "YOUR_LICENSE_KEY_HERE" with your New Relic license key
+1. Edit `config/newrelic_plugin.yml` and replace "YOUR_LICENSE_KEY_HERE" with your New Relic license key. You can find this in your profile on New Relic.
 1. Execute `./fluke_agent`
 1. Go back to the Extensions list, after a brief period you will see an entry for the TruView extension
 1. Customize your dashboard. Our default dashboards highlight application and site response times and usage, but you can play around with which metrics are reported and shown
