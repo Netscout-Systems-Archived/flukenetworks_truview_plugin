@@ -10,7 +10,7 @@ By deploying the plugin alongside your TruView, you can leverage the simplicity 
 
 By default, the agent is set up to use a demo user with a sample data set. This is to help get you off the ground more quickly! Try playing around with which metrics are reported to New Relic in the `fluke_agent` file.
 
-1. Go to <a href="https://github.com/newrelic-platform/flukenetworks_truview_extension" target="_blank">TruView plugin page</a> and find the latest archive.
+1. Go to <a href="https://github.com/FlukeNetworks/flukenetworks_truview_plugin" target="_blank">TruView plugin page</a> and find the latest archive.
 1. Download and extract the source
 1. Run `bundle install`
 1. Copy `config/template_newrelic_plugin.yml` to `config/newrelic_plugin.yml`
