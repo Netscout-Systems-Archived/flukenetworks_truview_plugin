@@ -8,7 +8,7 @@ By deploying the plugin alongside your TruView, you can leverage the simplicity 
 
 ### Instructions for running the TruView Example Agent
 
-By default, the agent is set up to use a demo user with a sample data set. This is to help get you off the ground more quickly! Try playing around with which metrics are reported to New Relic in the `fluke_agent` file.
+By default, the agent is set up to use a demo user with a sample data set. This is to help get you off the ground more quickly! Try playing around with which metrics are reported to New Relic in the `flukenetworks_truview_agent` file.
 
 1. Go to <a href="https://github.com/FlukeNetworks/flukenetworks_truview_plugin" target="_blank">TruView plugin page</a> and find the latest archive.
 1. Download and extract the source
@@ -17,7 +17,7 @@ By default, the agent is set up to use a demo user with a sample data set. This 
 1. Edit `config/newrelic_plugin.yml` and replace "YOUR_LICENSE_KEY_HERE" with your New Relic license key. You can find this in your profile on New Relic.
    1. You can leave the agent configuration as is to run the agent against our Demo Server (Studio 20/20)
    2. (Optional) Or change the configuration to point to your own TruView
-1. Execute `./fluke_agent`
+1. Execute `./flukenetworks_truview_agent`
 1. Go back to the Extensions list, after a brief period you will see an entry for the TruView extension
 1. Customize your dashboard. Our default dashboards highlight application and site response times and usage, but you can play around with which metrics are reported and shown
 
